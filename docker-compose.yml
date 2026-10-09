@@ -1,0 +1,43 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: crypto
+      POSTGRES_USER: crypto
+      POSTGRES_PASSWORD: crypto
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  fetcher:
+    build: .
+    command: ["python", "src/fetch_prices.py"]
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_DB: crypto
+      POSTGRES_USER: crypto
+      POSTGRES_PASSWORD: crypto
+      COINS: bitcoin,ethereum,solana
+      FETCH_INTERVAL_SEC: 60
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  dashboard:
+    build: .
+    command: ["streamlit", "run", "src/app.py",
+              "--server.port=8501", "--server.address=0.0.0.0"]
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_DB: crypto
+      POSTGRES_USER: crypto
+      POSTGRES_PASSWORD: crypto
+      DASHBOARD_REFRESH_SEC: 60
+    ports:
+      - "8501:8501"
+    depends_on:
+      - db
+
+volumes:
+  pgdata:
