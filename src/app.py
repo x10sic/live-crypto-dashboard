@@ -8,8 +8,8 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-from config import DASHBOARD_REFRESH_SEC
-from db import init_db, latest_prices, price_history
+from config import CLOUD_MODE, DASHBOARD_REFRESH_SEC
+from db import init_db, insert_prices, latest_prices, price_history
 
 st.set_page_config(page_title="Live Crypto Dashboard", layout="wide")
 st.title("Live Crypto Dashboard")
@@ -18,6 +18,15 @@ st.title("Live Crypto Dashboard")
 @st.cache_data(ttl=DASHBOARD_REFRESH_SEC)
 def load_latest() -> pd.DataFrame:
     init_db()
+    if CLOUD_MODE:
+        # No background worker on Streamlit Cloud: fetch + store inline.
+        # Guarded so a failed fetch never breaks the page.
+        try:
+            from fetch_prices import fetch_once
+
+            insert_prices(fetch_once())
+        except Exception:
+            pass
     rows = latest_prices()
     return pd.DataFrame(
         rows, columns=["coin", "price_usd", "price_inr", "change_24h", "fetched_at"]

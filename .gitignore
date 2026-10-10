@@ -6,6 +6,6 @@ venv/
 .env.*
 !.env.example
 *.log
-.streamlit/
+.streamlit/secrets.toml
 pgdata/
 .DS_Store

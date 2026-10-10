@@ -2,10 +2,12 @@
 import psycopg2
 from psycopg2.extras import execute_values
 
-from config import POSTGRES
+from config import DATABASE_URL, POSTGRES
 
 
 def get_conn():
+    if DATABASE_URL:
+        return psycopg2.connect(DATABASE_URL)
     return psycopg2.connect(**POSTGRES)
 
 

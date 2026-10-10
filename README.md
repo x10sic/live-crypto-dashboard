@@ -64,9 +64,22 @@ All settings are read from the environment — see [`.env.example`](.env.example
 | Variable | Default | What it does |
 |---|---|---|
 | `POSTGRES_HOST` / `PORT` / `DB` / `USER` / `PASSWORD` | `localhost`/`5432`/`crypto` | Database connection (Compose overrides host with `db`) |
+| `DATABASE_URL` | _(empty)_ | Full connection string — overrides the parts above; used for Neon on Streamlit Cloud (keep `?sslmode=require`) |
 | `COINS` | `bitcoin,ethereum,solana` | Comma-separated CoinGecko coin ids to track |
 | `FETCH_INTERVAL_SEC` | `60` | How often the fetcher polls CoinGecko |
 | `DASHBOARD_REFRESH_SEC` | `60` | How often the dashboard refreshes |
+| `CLOUD_MODE` | `false` | `true` on Streamlit Cloud: the app fetches + stores prices itself (no background worker there) |
+
+## Deploy on Streamlit Cloud (free)
+
+The repo is already deployment-ready — no code changes needed:
+
+1. Sign in at [share.streamlit.io](https://share.streamlit.io) with GitHub → **New app**
+2. Repo: `x10sic/live-crypto-dashboard`, branch `main`, main file path: `src/app.py`
+3. **Advanced settings → Secrets** — paste the contents of [`.streamlit/secrets.toml.example`](.streamlit/secrets.toml.example), replacing `DATABASE_URL` with your Neon connection string (from the Neon dashboard; it already includes `?sslmode=require`)
+4. **Deploy** — the app creates the `prices` table itself on first run (`init_db`)
+
+How it works in the cloud: Streamlit Cloud can't run the background fetcher, so with `CLOUD_MODE=true` the app fetches CoinGecko and inserts prices itself on each refresh cycle (every ~60s). Each visit keeps the data fresh; the 24h charts build up over time. Free-tier caveats: the app sleeps after inactivity and takes ~30s to wake on the next visit, and Neon wakes from idle in ~1–2s — fine for a portfolio demo.
 
 ## Project Structure
 
@@ -79,6 +92,8 @@ live-crypto-dashboard/
 │   └── app.py            # Streamlit dashboard
 ├── Dockerfile
 ├── docker-compose.yml    # db + fetcher + dashboard in one command
+├── .streamlit/
+│   └── secrets.toml.example  # Streamlit Cloud secrets template
 ├── requirements.txt
 ├── .env.example          # placeholder values only — copy to .env
 ├── .gitignore
